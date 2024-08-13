@@ -34,8 +34,14 @@ def filter_data(data: pd.DataFrame) -> pd.DataFrame:
     df_ = df_[(df_.language == "en") & (df_.language_ft == "en")]
     print(f"Language Filtered: {time.time() - start}")
     
+    # Removing genius english translations
+    start = time.time()
+    df_ = df_[~(df_.artist == "Genius English Translations")]
+    print(f"Artists Filtered: {time.time() - start}")
+    
     df_ = df_.drop(columns=['language_cld3', 'language_ft', 'language'])
     print(f"Original Samples: {data.shape[0]} \n Filtered Samples: {df_.shape[0]}")
+
     return df_
 
 def save_data(data: pd.DataFrame, path: str = "filtered_data.csv") -> None:
