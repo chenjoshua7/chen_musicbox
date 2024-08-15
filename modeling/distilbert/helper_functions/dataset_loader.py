@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import AutoTokenizer
+from sklearn.preprocessing import OneHotEncoder
 
 class TextDataset:
     def __init__(self, text_dataset, labels, max_length=128, batch_size=32) -> None:
