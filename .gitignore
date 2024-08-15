@@ -1,5 +1,6 @@
 *.pkl
 *.csv
 *.feather
+*.pth
 /mlruns/
 /mlartifacts/
