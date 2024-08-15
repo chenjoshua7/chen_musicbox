@@ -6,8 +6,9 @@ from transformers import AutoTokenizer
 from sklearn.preprocessing import OneHotEncoder
 
 class TextDataset:
-    def __init__(self, text_dataset, labels, max_length=128, batch_size=32) -> None:
+    def __init__(self, text_dataset, labels, max_length=128, batch_size=32, shuffle = True) -> None:
         assert len(text_dataset) == len(labels), "Text samples does not match Labels"
+        self.shuffle = shuffle
         self.ohe = OneHotEncoder()
         checkpoint = "distilbert-base-uncased"
         self.text_dataset = list(text_dataset)
@@ -53,14 +54,14 @@ class TextDataset:
         
         return input_ids, attention_masks
     
-    def create_dataloader(self, shuffle_data=True):
+    def create_dataloader(self):
         labels_tensor = torch.tensor(self.text_labels, dtype=torch.long)
         input_ids_tensor = torch.tensor(self.input_ids, dtype=torch.long)
         attention_masks_tensor = torch.tensor(self.attention_masks, dtype=torch.long)
         
         dataset = TensorDataset(input_ids_tensor, attention_masks_tensor, labels_tensor)
         
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle_data)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
     
     def get_dataloader(self):
         return self.dataloader
