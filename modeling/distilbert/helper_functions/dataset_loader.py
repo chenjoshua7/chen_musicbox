@@ -64,3 +64,7 @@ class TextDataset:
     
     def get_dataloader(self):
         return self.dataloader
+        
+    def head(self, rows=10, **kwargs):
+        df = self.to_dataframe()
+        return df.head(rows=rows, **kwargs)
