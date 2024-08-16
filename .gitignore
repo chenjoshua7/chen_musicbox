@@ -2,5 +2,6 @@
 *.csv
 *.feather
 *.pth
-/mlruns/
+*.pyc
 /mlartifacts/
+/mlruns/
