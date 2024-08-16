@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import torch
 import os
+import numpy as np
 
 class PytorchTrainer:
     def __init__(self, device) -> None:
@@ -60,7 +61,7 @@ class PytorchTrainer:
         model.eval()
         with torch.no_grad():
             valid_loss, valid_correct, valid_total = 0.0, 0, 0
-            for input_ids, attention_mask, labels in val_loader:
+            for input_ids, attention_mask, labels in tqdm(val_loader):
                 input_ids, attention_mask, labels = input_ids.to(self.device), attention_mask.to(self.device), labels.to(self.device)
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
                 loss = torch.nn.functional.cross_entropy(outputs, labels)
@@ -118,7 +119,9 @@ class PytorchTrainer:
             test_accuracy = test_correct / test_total
             test_loss /= len(testing_loader)
             print(f'Testing Loss: {test_loss:.4f} | Validation Accuracy: {test_accuracy:.4f}')
-            return predictions
+            predictions_cpu = [tensor.cpu().numpy() for tensor in predictions]
+            predictions_array = np.stack(predictions_cpu, axis=0) 
+            return predictions_array
         
     def load_model(path, model, optimizer = None):
         checkpoint = torch.load(path)
