@@ -3,17 +3,19 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import AutoTokenizer
-from sklearn.preprocessing import OneHotEncoder
 
 class TextDataset:
-    def __init__(self, text_dataset, labels, max_length=128, batch_size=32, shuffle = True) -> None:
-        assert len(text_dataset) == len(labels), "Text samples does not match Labels"
+    def __init__(self, text_dataset, labels, max_length=128, batch_size=32, shuffle=True) -> None:
+        assert len(text_dataset) == len(labels), "Text samples do not match Labels"
         self.shuffle = shuffle
-        self.ohe = OneHotEncoder()
+
+        self.genre_to_id = {"rap": 0, "rock": 1, "rb": 2, "pop": 3, "country": 4}
+        self.id_to_genre = {v: k for k, v in self.genre_to_id.items()}
+        
         checkpoint = "distilbert-base-uncased"
         self.text_dataset = list(text_dataset)
-        self.text_labels = self.ohe.fit_transform(np.array(labels).reshape(1,-1)).toarray()[0]
-        self.num_classes = len(set(labels))
+        self.text_labels = [self.genre_to_id[label] for label in labels]
+        self.num_classes = len(self.genre_to_id)
         self.max_length = max_length
         self.batch_size = batch_size
         
@@ -31,7 +33,7 @@ class TextDataset:
     def to_dataframe(self):
         return pd.DataFrame({
             "Text": self.text_dataset,
-            "Label": self.ohe.inverse_transform(self.text_labels.reshape(1,-1))[0]
+            "Label": [self.id_to_genre[label] for label in self.text_labels]
         })
     
     def __repr__(self):
@@ -68,4 +70,4 @@ class TextDataset:
         
     def head(self, n=10):
         df = self.to_dataframe()
-        return df.head(n = n)
+        return df.head(n=n)
