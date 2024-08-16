@@ -14,6 +14,9 @@ def preprocess_text(x: pd.Series) -> list[str]:
 data = pd.read_feather("../../data_preprocessing/filtered_data.feather")
 data["processed_lyrics"] = preprocess_text(data.lyrics)
 
+x = data.processed_lyrics
+y = data.tag
+
 genres = set(data.tag)
 
 # Taking only the top 10000 per genre
