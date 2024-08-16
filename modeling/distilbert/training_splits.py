@@ -2,6 +2,8 @@ import pandas as pd
 import re
 
 from sklearn.model_selection import train_test_split
+import os 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def preprocess_text(x: pd.Series) -> list[str]: 
     x_ = x.copy()
@@ -28,8 +30,8 @@ for genre in genres:
 
 filtered_data = top_10000_per_genre.reset_index(drop=True)
 
-X_, X_test, y_, y_test = train_test_split(x, y, random_state=1234, test_size=0.75, stratify=y)
-X_train, X_valid, y_train, y_valid = train_test_split(X_, y_, random_state=1234, test_size=0.8, stratify=y_)
+X_, X_test, y_, y_test = train_test_split(x, y, random_state=1234, train_size=0.75, stratify=y)
+X_train, X_valid, y_train, y_valid = train_test_split(X_, y_, random_state=1234, train_size=0.8, stratify=y_)
 del X_, y_
 
 def save_data_feather(X_train, X_valid, X_test, y_train, y_valid, y_test, path="training_sets.feather") -> None:
