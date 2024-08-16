@@ -26,8 +26,9 @@ mlflow.set_experiment("chens musicbox")
 #################################################
 ## Running a Baseline with Logistic Regression ##
 #################################################
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-data = pd.read_feather("data_preprocessing/filtered_data.feather")
+data = pd.read_feather("../../data_preprocessing/filtered_data.feather")
 print("Data Loaded")
 
 x = data.lyrics
