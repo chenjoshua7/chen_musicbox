@@ -1,15 +1,17 @@
 import pandas as pd
 import numpy as np
+import os
+import pickle
+
 import torch
-from torch.utils.data import DataLoader, TensorDataset
 from transformers import DistilBertConfig
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+
 import mlflow
 import mlflow.pytorch
-import os
+
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pickle
 
 from helper_functions.dataset_loader import TextDataset
 from helper_functions.distilbert_architecture import DistilBertForSequenceClassification
@@ -63,8 +65,8 @@ print("Validation Dataset Loaded...")
 testing_set = TextDataset(X_test, y_test, batch_size=BATCH_SIZE, max_length=MAX_LENGTH, shuffle=False)
 print("Testing Dataset Loaded...")
 
-train_loader = training_set.get_dataloader()
-val_loader = validation_set.get_dataloader()
+"""train_loader = training_set.get_dataloader()
+val_loader = validation_set.get_dataloader()"""
 test_loader = testing_set.get_dataloader()
 
 # Initialize model, config, optimizer
@@ -76,6 +78,7 @@ model = model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
 print("\nModel Initialized\n")
+
 # Start MLflow run
 with mlflow.start_run():
     # Log model configuration
@@ -84,25 +87,37 @@ with mlflow.start_run():
     mlflow.log_param("learning_rate", 1e-5)
     mlflow.log_param("num_labels", len(set(y_train)))
 
-    # Training process
     trainer = PytorchTrainer(device=device)
+    
+    #Load model?
+    checkpoint = input("Train from checkpoint? (Y/N):")
+    if checkpoint.upper() == "Y":
+        path = input("Checkpoint path:")
+        model, optimizer = trainer.load_model(path = path, model = model, optimizer= optimizer)
+        print(f"Currently on Epoch {trainer.cur_epoch}")
+
+    #Select epochs
+    epochs = int(input("Number of Training Epochs: "))
+    
+    # Training process
     trained_model, trained_optimizer = trainer.run(
         model=model,
         optimizer=optimizer,
-        epochs=5,
+        epochs=epochs,
         train_loader=train_loader,
         val_loader=val_loader
-    )
+
 
     # Make predictions
-    predictions = trainer.predict(testing_loader=test_loader)
-    predictions = torch.tensor(predictions).cpu().numpy()
+    model, optimizer = trainer.load_model(path= "checkpoints/3_val_acc_0.72.pth", model = model, optimizer=optimizer)
+    predictions = trainer.predict(testing_loader=test_loader, model = model)
+    y_true= testing_set.text_labels
     
     # Calculate accuracy, precision, recall, and f1-score
-    accuracy = np.sum(predictions == y_test) / len(predictions)
-    precision = precision_score(y_true=y_test, y_pred=predictions, average="macro")
-    recall = recall_score(y_true=y_test, y_pred=predictions, average="macro")
-    f1 = f1_score(y_true=y_test, y_pred=predictions, average="macro")
+    accuracy = np.sum(predictions == y_true) / len(predictions)
+    precision = precision_score(y_true=y_true, y_pred=predictions, average="macro")
+    recall = recall_score(y_true=y_true, y_pred=predictions, average="macro")
+    f1 = f1_score(y_true=y_true, y_pred=predictions, average="macro")
 
     # Log metrics
     mlflow.log_metric("accuracy", accuracy)
@@ -116,9 +131,9 @@ with mlflow.start_run():
     mlflow.log_artifact("checkpoints/training_history.pkl")
     
     # Log confusion matrix
-    plot_confusion_matrix(y_test, predictions, classes=testing_set.id_to_genre.values())
+    plot_confusion_matrix(y_true, predictions, classes=testing_set.id_to_genre.values())
 
     # Log the trained model
-    mlflow.pytorch.log_model(trained_model, "distilbert_model")
+    #mlflow.pytorch.log_model(trained_model, "distilbert_model")
 
     print(f"Training complete. Metrics: accuracy={accuracy}, f1={f1}, precision={precision}, recall={recall}")
