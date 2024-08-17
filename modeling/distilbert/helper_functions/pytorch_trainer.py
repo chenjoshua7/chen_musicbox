@@ -10,13 +10,14 @@ class PytorchTrainer:
         self.best_val_accuracy = 0
         self.count = 0
         self.path = "checkpoints"
+        self.cur_epoch = 0
         self.epochs = 0
         self.best_model = None
         
     def run(self, model, optimizer, epochs, train_loader, val_loader):
         self.epochs = epochs
         
-        for epoch in range(1, epochs + 1):
+        for epoch in range(self.cur_epoch + 1, epochs + 1):
             model, optimizer, (training_loss, training_accuracy) = self.evaluate(model=model, optimizer=optimizer, train_loader=train_loader, epoch=epoch)
             validation_loss, val_accuracy = self.validate(model=model, val_loader=val_loader, epoch=epoch)
             
@@ -94,6 +95,7 @@ class PytorchTrainer:
             'optimizer_state': optimizer_state,
             'epoch': epoch
         }, path)
+        print(f"Model saved at {path}")
         self.best_model = path
         
     def set_path(self, path: str) -> None:
@@ -123,11 +125,11 @@ class PytorchTrainer:
             predictions_array = np.stack(predictions_cpu, axis=0) 
             return predictions_array
         
-    def load_model(path, model, optimizer = None):
+    def load_model(self, path, model, optimizer = None):
         checkpoint = torch.load(path)
         model.load_state_dict(checkpoint['model_state'])
         if optimizer:
             optimizer.load_state_dict(checkpoint['optimizer_state'])
-        epoch = checkpoint['epoch']
+        self.cur_epoch = checkpoint['epoch']
         print("Model Loaded")
-        return model, optimizer, epoch
+        return model, optimizer
