@@ -117,13 +117,14 @@ class PytorchTrainer:
                 test_correct += (test_output == labels).sum().item()
                 test_total += labels.size(0)
                 predictions.extend(test_output)
-                
+
             test_accuracy = test_correct / test_total
             test_loss /= len(testing_loader)
-            print(f'Testing Loss: {test_loss:.4f} | Validation Accuracy: {test_accuracy:.4f}')
+            print(f'Testing Loss: {test_loss:.4f} | Test Accuracy: {test_accuracy:.4f}')
             predictions_cpu = [tensor.cpu().numpy() for tensor in predictions]
             predictions_array = np.stack(predictions_cpu, axis=0) 
             return predictions_array
+            
         
     def load_model(self, path, model, optimizer = None):
         checkpoint = torch.load(path)
