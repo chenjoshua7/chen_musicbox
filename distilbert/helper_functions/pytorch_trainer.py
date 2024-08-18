@@ -129,8 +129,11 @@ class PytorchTrainer:
     def load_model(self, path, model, optimizer = None):
         checkpoint = torch.load(path)
         model.load_state_dict(checkpoint['model_state'])
+        self.cur_epoch = checkpoint['epoch']
         if optimizer:
             optimizer.load_state_dict(checkpoint['optimizer_state'])
-        self.cur_epoch = checkpoint['epoch']
-        print("Model Loaded")
-        return model, optimizer
+            print("Model and Optimizer Loaded")
+            return model, optimizer
+        else:
+            print("Model Loaded")
+            return model   

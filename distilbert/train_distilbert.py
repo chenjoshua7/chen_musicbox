@@ -65,8 +65,8 @@ print("Validation Dataset Loaded...")
 testing_set = TextDataset(X_test, y_test, batch_size=BATCH_SIZE, max_length=MAX_LENGTH, shuffle=False)
 print("Testing Dataset Loaded...")
 
-"""train_loader = training_set.get_dataloader()
-val_loader = validation_set.get_dataloader()"""
+train_loader = training_set.get_dataloader()
+val_loader = validation_set.get_dataloader()
 test_loader = testing_set.get_dataloader()
 
 # Initialize model, config, optimizer
