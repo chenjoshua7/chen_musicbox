@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Genre Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 20px;
+        }
+        .prediction-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .prediction-label {
+            width: 20%;
+            font-weight: bold;
+            text-align: left;
+            margin-right: 10px;
+        }
+        .prediction-bar-container {
+            width: 60%;
+            background-color: #f0f0f0;
+            position: relative;
+            height: 20px;
+            margin-right: 10px;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+        .prediction-bar {
+            height: 100%;
+            background-color: #4caf50;
+            width: 0;
+            transition: width 1s ease;
+        }
+        .prediction-percentage {
+            width: 20%;
+            text-align: right;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Genre Prediction</h1>
+    <textarea id="inputText" placeholder="Enter your text here..."></textarea>
+    <br>
+    <button onclick="predict()">Predict Genre</button>
+    <div id="result" class="result"></div>
+    <div id="error" class="error"></div>
+
+    <script>
+        async function predict() {
+            const inputText = document.getElementById('inputText').value;
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            
+            resultDiv.innerHTML = '';
+            errorDiv.innerHTML = '';
+
+            if (inputText.length < 100) {
+                errorDiv.innerHTML = 'Error: Text must contain at least 100 characters.';
+                return;
+            }
+
+            const data = {
+                text: inputText
+            };
+
+            try {
+                const response = await fetch('http://0.0.0.0:80/predict/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errorResponse = await response.json();
+                    errorDiv.innerHTML = `Error: ${errorResponse.detail}`;
+                    return;
+                }
+
+                const result = await response.json();
+
+                let resultHTML = '<h3>Prediction Results:</h3>';
+                for (const [genre, probability] of Object.entries(result)) {
+                    const percentage = parseFloat(probability);
+                    resultHTML += `
+                        <div class="prediction-container">
+                            <div class="prediction-label">${genre}</div>
+                            <div class="prediction-bar-container">
+                                <div class="prediction-bar" style="width: 0;"></div>
+                            </div>
+                            <div class="prediction-percentage">${probability}</div>
+                        </div>
+                    `;
+                }
+
+                resultDiv.innerHTML = resultHTML;
+
+                // Animate the bars
+                document.querySelectorAll('.prediction-bar').forEach((bar, index) => {
+                    const percentage = parseFloat(Object.values(result)[index]);
+                    setTimeout(() => {
+                        bar.style.width = `${percentage}%`;
+                    }, 100); // Delay to allow transition to start
+                });
+
+            } catch (error) {
+                errorDiv.innerHTML = `Network Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
