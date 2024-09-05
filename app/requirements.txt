@@ -4,3 +4,5 @@ torch==2.2.0
 transformers==4.37.2
 pydantic==2.6.1
 numpy<2.0.0
+pandas==2.2.0
+azure-storage-blob==12.18.2
