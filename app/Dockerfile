@@ -1,39 +1,44 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim
+# Stage 1: Build stage using Python slim image
+FROM python:3.11-slim AS builder
 
-# Set the working directory in the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
-
-# Install system dependencies required for PyTorch and ODBC drivers
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    unixodbc \
-    unixodbc-dev \
+# Install required system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    curl \
     g++ \
-    && apt-get clean
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install the ODBC Driver for SQL Server
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
-    && apt-get clean
+# Copy only the requirements file to the container
+COPY requirements.txt .
 
-# Install Python dependencies including pyodbc
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir "fastapi==0.112.1" "uvicorn==0.30.1" "torch==2.2.0" "transformers==4.37.2" "pydantic==2.6.1" "numpy<2.0.0" "pyodbc"
+# Install the dependencies without caching to minimize size
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port 80 to the outside world
-EXPOSE 80
+# Stage 2: Final image using Python slim base
+FROM python:3.11-slim
 
-# Define environment variable
-ENV PYTHONUNBUFFERED=1
+# Set the working directory inside the container
+WORKDIR /app
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+# Install minimal system dependencies required for the final image
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy the entire application code to the container
+COPY . .
+
+# Expose the port on which FastAPI will run (default is 8000)
+EXPOSE 8000
+
+# Define the command to run your FastAPI app using Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
